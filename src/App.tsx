@@ -328,8 +328,8 @@ export default function App() {
 function WelcomeScreen({ onContinue }: { onContinue: () => void }) {
   return (
     <div className="flex-1 flex flex-col">
-      <div className="h-2/3 bg-topo curved-bottom flex items-center justify-center">
-        {/* Topographic pattern is in CSS */}
+      <div className="h-2/3 bg-welcome-hero curved-bottom flex items-center justify-center">
+        {/* Elegant building image background */}
       </div>
       <div className="p-8 flex-1 flex flex-col justify-between">
         <div>

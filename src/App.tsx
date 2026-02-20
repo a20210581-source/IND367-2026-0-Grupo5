@@ -26,7 +26,9 @@ import {
   TrendingUp,
   Calendar,
   FileText,
-  LogOut
+  LogOut,
+  Edit3,
+  Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -150,6 +152,16 @@ const MOCK_APPROVALS: Approval[] = [
   }
 ];
 
+const MOCK_CATALOG = [
+  'Cemento Portland Tipo I',
+  'Acero 12mm Corrugado',
+  'Grava 3/4"',
+  'Ladrillo King Kong',
+  'Arena Fina',
+  'Madera para Encofrado',
+  'Pintura Látex Blanca',
+];
+
 // --- Components ---
 
 function UserDropdown({ 
@@ -216,6 +228,7 @@ export default function App() {
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [approvals, setApprovals] = useState<Approval[]>(MOCK_APPROVALS);
+  const [catalog, setCatalog] = useState<string[]>(MOCK_CATALOG);
   const [approvalFilter, setApprovalFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
 
   const navigateTo = (screen: Screen) => setCurrentScreen(screen);
@@ -233,6 +246,12 @@ export default function App() {
   const handleAddRequirement = (req: Requirement) => {
     setRequirements([...requirements, req]);
     navigateTo('requirement-list');
+  };
+
+  const handleAddToCatalog = (item: string) => {
+    if (!catalog.includes(item)) {
+      setCatalog([...catalog, item]);
+    }
   };
 
   const handleDeleteRequirement = (id: string) => {
@@ -254,8 +273,33 @@ export default function App() {
       case 'project-list': return <ProjectListScreen onSelect={(id) => { setSelectedProject(id); navigateTo('project-detail'); }} onBack={() => navigateTo('home')} onLogout={handleLogout} onChangePassword={() => navigateTo('forgot-password')} onHome={() => navigateTo('home')} />;
       case 'project-detail': return <ProjectDetailScreen projectName={MOCK_PROJECTS.find(p => p.id === selectedProject)?.name || ''} onBack={() => navigateTo('project-list')} onInventory={() => navigateTo('inventory')} onRequirement={() => navigateTo('requirement-form')} onApprovals={() => navigateTo('approvals')} onLogout={handleLogout} onChangePassword={() => navigateTo('forgot-password')} onHome={() => navigateTo('home')} />;
       case 'inventory': return <InventoryScreen projectName={MOCK_PROJECTS.find(p => p.id === selectedProject)?.name || ''} materials={MOCK_INVENTORY[selectedProject || '1']} onBack={() => navigateTo('project-detail')} onLogout={handleLogout} onChangePassword={() => navigateTo('forgot-password')} onHome={() => navigateTo('home')} />;
-      case 'requirement-form': return <RequirementFormScreen projectName={MOCK_PROJECTS.find(p => p.id === selectedProject)?.name || ''} onAdd={handleAddRequirement} onBack={() => navigateTo('project-detail')} onList={() => navigateTo('requirement-list')} onLogout={handleLogout} onChangePassword={() => navigateTo('forgot-password')} onHome={() => navigateTo('home')} />;
-      case 'requirement-list': return <RequirementListScreen projectName={MOCK_PROJECTS.find(p => p.id === selectedProject)?.name || ''} requirements={requirements} onDelete={handleDeleteRequirement} onBack={() => navigateTo('requirement-form')} onNew={() => navigateTo('requirement-form')} onLogout={handleLogout} onChangePassword={() => navigateTo('forgot-password')} onHome={() => navigateTo('home')} />;
+      case 'requirement-form': return (
+        <RequirementFormScreen 
+          projectName={MOCK_PROJECTS.find(p => p.id === selectedProject)?.name || ''} 
+          catalog={catalog}
+          onAdd={handleAddRequirement} 
+          onAddToCatalog={handleAddToCatalog}
+          onBack={() => navigateTo('project-detail')} 
+          onList={() => navigateTo('requirement-list')}
+          onApprovals={() => navigateTo('approvals')}
+          onLogout={handleLogout}
+          onChangePassword={() => navigateTo('forgot-password')}
+          onHome={() => navigateTo('home')}
+        />
+      );
+      case 'requirement-list': return (
+        <RequirementListScreen 
+          projectName={MOCK_PROJECTS.find(p => p.id === selectedProject)?.name || ''} 
+          requirements={requirements} 
+          onDelete={handleDeleteRequirement} 
+          onBack={() => navigateTo('requirement-form')} 
+          onNew={() => navigateTo('requirement-form')} 
+          onApprovals={() => navigateTo('approvals')}
+          onLogout={handleLogout} 
+          onChangePassword={() => navigateTo('forgot-password')} 
+          onHome={() => navigateTo('home')} 
+        />
+      );
       case 'approvals': return <ApprovalsScreen approvals={approvals} filter={approvalFilter} setFilter={setApprovalFilter} onAction={handleApprovalAction} onBack={() => navigateTo('project-detail')} onLogout={handleLogout} onChangePassword={() => navigateTo('forgot-password')} onHome={() => navigateTo('home')} />;
       default: return <WelcomeScreen onContinue={() => navigateTo('login')} />;
     }
@@ -320,7 +364,7 @@ function LoginScreen({ onLogin, onRegister, onForgot, onBack }: { onLogin: (emai
       <div className="p-8 flex-1 flex flex-col">
         <h2 className="text-4xl font-bold text-slate-800 mb-12 border-b-4 border-brand-primary inline-block w-fit pb-1">Inicia sesión</h2>
         
-        <div className="space-y-8 flex-1">
+        <div className="space-y-10 flex-1">
           <div className="space-y-1">
             <label className="text-sm font-bold text-slate-700">Correo</label>
             <div className="flex items-center gap-3 border-b border-brand-primary pb-2">
@@ -346,7 +390,7 @@ function LoginScreen({ onLogin, onRegister, onForgot, onBack }: { onLogin: (emai
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pt-4">
             <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
               <input type="checkbox" className="w-4 h-4 rounded border-brand-primary text-brand-primary focus:ring-brand-primary" />
               Recordar contraseña
@@ -355,7 +399,7 @@ function LoginScreen({ onLogin, onRegister, onForgot, onBack }: { onLogin: (emai
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 mt-12">
           <button 
             onClick={() => onLogin(email)}
             className="w-full py-4 bg-brand-primary text-white rounded-xl font-bold text-lg shadow-lg hover:bg-brand-accent transition-colors"
@@ -535,8 +579,8 @@ function HomeScreen({ userName, onSelectProject, onDashboard, onLogout }: { user
 
 function GlobalDashboardScreen({ onBack, onLogout, onChangePassword, onHome }: { onBack: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 overflow-y-auto pb-24">
-      <div className="bg-brand-primary p-6 flex items-center justify-between text-white">
+    <div className="flex-1 flex flex-col bg-slate-50 h-full overflow-hidden">
+      <div className="bg-brand-primary p-6 flex items-center justify-between text-white shrink-0">
         <button onClick={onBack} className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
           <ArrowLeft size={20} />
         </button>
@@ -544,7 +588,7 @@ function GlobalDashboardScreen({ onBack, onLogout, onChangePassword, onHome }: {
         <UserDropdown onLogout={onLogout} onChangePassword={onChangePassword} />
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="flex-1 p-6 space-y-6 overflow-y-auto min-h-0">
         {/* Project Status Chart */}
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
           <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -615,7 +659,7 @@ function GlobalDashboardScreen({ onBack, onLogout, onChangePassword, onHome }: {
         </div>
       </div>
 
-      <div className="bg-topo p-6 flex justify-center curved-top mt-auto">
+      <div className="bg-topo p-6 flex justify-center curved-top shrink-0">
         <button onClick={onHome} className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center shadow-xl">
           <Home size={32} className="text-slate-800" />
         </button>
@@ -638,8 +682,8 @@ function ProjectListScreen({ onSelect, onBack, onLogout, onChangePassword, onHom
   });
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50">
-      <div className="bg-brand-primary p-6 flex items-center justify-between text-white">
+    <div className="flex-1 flex flex-col bg-slate-50 h-full overflow-hidden">
+      <div className="bg-brand-primary p-6 flex items-center justify-between text-white shrink-0">
         <button onClick={onBack} className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
           <ArrowLeft size={20} />
         </button>
@@ -647,7 +691,7 @@ function ProjectListScreen({ onSelect, onBack, onLogout, onChangePassword, onHom
         <UserDropdown onLogout={onLogout} onChangePassword={onChangePassword} />
       </div>
 
-      <div className="p-6 space-y-4">
+      <div className="p-6 space-y-4 shrink-0">
         {/* Search Bar */}
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
@@ -695,7 +739,7 @@ function ProjectListScreen({ onSelect, onBack, onLogout, onChangePassword, onHom
         </div>
       </div>
 
-      <div className="flex-1 p-6 space-y-6 overflow-y-auto pt-0">
+      <div className="flex-1 p-6 space-y-6 overflow-y-auto pt-0 min-h-0">
         {filteredProjects.length === 0 ? (
           <div className="text-center py-20 text-slate-400">No se encontraron proyectos</div>
         ) : (
@@ -726,7 +770,7 @@ function ProjectListScreen({ onSelect, onBack, onLogout, onChangePassword, onHom
         )}
       </div>
 
-      <div className="bg-topo p-6 flex justify-center curved-top">
+      <div className="bg-topo p-6 flex justify-center curved-top shrink-0">
         <button onClick={onHome} className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center shadow-xl">
           <Home size={32} className="text-slate-800" />
         </button>
@@ -737,8 +781,8 @@ function ProjectListScreen({ onSelect, onBack, onLogout, onChangePassword, onHom
 
 function ProjectDetailScreen({ projectName, onBack, onInventory, onRequirement, onApprovals, onLogout, onChangePassword, onHome }: { projectName: string, onBack: () => void, onInventory: () => void, onRequirement: () => void, onApprovals: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
   return (
-    <div className="flex-1 flex flex-col bg-white">
-      <div className="bg-brand-primary p-6 flex items-center justify-between text-white">
+    <div className="flex-1 flex flex-col bg-white h-full overflow-hidden">
+      <div className="bg-brand-primary p-6 flex items-center justify-between text-white shrink-0">
         <button onClick={onBack} className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
           <ArrowLeft size={20} />
         </button>
@@ -746,7 +790,7 @@ function ProjectDetailScreen({ projectName, onBack, onInventory, onRequirement, 
         <UserDropdown onLogout={onLogout} onChangePassword={onChangePassword} />
       </div>
 
-      <div className="flex-1 p-6 flex flex-col gap-6">
+      <div className="flex-1 p-6 flex flex-col gap-6 overflow-y-auto min-h-0">
         <div className="w-full aspect-video bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300 border-b-4 border-slate-200">
           <Search size={64} />
         </div>
@@ -764,7 +808,7 @@ function ProjectDetailScreen({ projectName, onBack, onInventory, onRequirement, 
         </div>
       </div>
 
-      <div className="bg-topo p-6 flex justify-center curved-top">
+      <div className="bg-topo p-6 flex justify-center curved-top shrink-0">
         <button onClick={onHome} className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center shadow-xl">
           <Home size={32} className="text-slate-800" />
         </button>
@@ -781,8 +825,8 @@ function InventoryScreen({ projectName, materials, onBack, onLogout, onChangePas
   );
 
   return (
-    <div className="flex-1 flex flex-col bg-white">
-      <div className="bg-brand-primary p-6 flex items-center justify-between text-white">
+    <div className="flex-1 flex flex-col bg-white h-full overflow-hidden">
+      <div className="bg-brand-primary p-6 flex items-center justify-between text-white shrink-0">
         <button onClick={onBack} className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
           <ArrowLeft size={20} />
         </button>
@@ -790,7 +834,7 @@ function InventoryScreen({ projectName, materials, onBack, onLogout, onChangePas
         <UserDropdown onLogout={onLogout} onChangePassword={onChangePassword} />
       </div>
 
-      <div className="p-6 space-y-6 flex-1 overflow-y-auto">
+      <div className="p-6 space-y-6 flex-1 overflow-y-auto min-h-0">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
             <Package size={28} />
@@ -829,7 +873,7 @@ function InventoryScreen({ projectName, materials, onBack, onLogout, onChangePas
         </div>
       </div>
 
-      <div className="bg-topo p-6 flex justify-center curved-top">
+      <div className="bg-topo p-6 flex justify-center curved-top shrink-0">
         <button onClick={onHome} className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center shadow-xl">
           <Home size={32} className="text-slate-800" />
         </button>
@@ -838,14 +882,25 @@ function InventoryScreen({ projectName, materials, onBack, onLogout, onChangePas
   );
 }
 
-function RequirementFormScreen({ projectName, onAdd, onBack, onList, onLogout, onChangePassword, onHome }: { projectName: string, onAdd: (req: Requirement) => void, onBack: () => void, onList: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
+function RequirementFormScreen({ projectName, catalog, onAdd, onAddToCatalog, onBack, onList, onApprovals, onLogout, onChangePassword, onHome }: { projectName: string, catalog: string[], onAdd: (req: Requirement) => void, onAddToCatalog: (item: string) => void, onBack: () => void, onList: () => void, onApprovals: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
   const [qty, setQty] = useState('');
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [newMaterialName, setNewMaterialName] = useState('');
+
+  const handleAddNew = () => {
+    if (newMaterialName.trim()) {
+      onAddToCatalog(newMaterialName.trim());
+      setName(newMaterialName.trim());
+      setNewMaterialName('');
+      setIsAddingNew(false);
+    }
+  };
 
   return (
-    <div className="flex-1 flex flex-col bg-white">
-      <div className="bg-brand-primary p-6 flex items-center justify-between text-white">
+    <div className="flex-1 flex flex-col bg-white h-full overflow-hidden">
+      <div className="bg-brand-primary p-6 flex items-center justify-between text-white shrink-0">
         <button onClick={onBack} className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
           <ArrowLeft size={20} />
         </button>
@@ -853,25 +908,58 @@ function RequirementFormScreen({ projectName, onAdd, onBack, onList, onLogout, o
         <UserDropdown onLogout={onLogout} onChangePassword={onChangePassword} />
       </div>
 
-      <div className="p-6 flex-1 flex flex-col">
-        <div className="flex gap-2 mb-12">
-          <button className="flex-1 py-3 bg-brand-primary text-white rounded-xl font-bold text-sm">Nuevo requerimiento</button>
-          <button onClick={onList} className="flex-1 py-3 bg-slate-200 text-slate-500 rounded-xl font-bold text-sm">Lista</button>
+      <div className="p-6 flex-1 flex flex-col overflow-y-auto min-h-0">
+        <div className="flex gap-2 mb-12 shrink-0">
+          <button className="flex-1 py-3 bg-brand-primary text-white rounded-xl font-bold text-sm uppercase">Nuevo requerimiento</button>
+          <button onClick={onList} className="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl font-bold text-sm uppercase">Lista</button>
         </div>
 
         <div className="space-y-10 flex-1">
           <div className="space-y-1">
-            <label className="text-sm font-bold text-slate-700">Nombre del material</label>
-            <div className="flex items-center gap-3 border-b border-brand-primary pb-2">
-              <Search size={18} className="text-slate-800" />
-              <input 
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                type="text" 
-                placeholder="Ej: Cemento Portland Tipo I" 
-                className="flex-1 outline-none text-slate-600" 
-              />
+            <div className="flex justify-between items-center">
+              <label className="text-sm font-bold text-slate-700">Nombre del material</label>
+              <button 
+                onClick={() => setIsAddingNew(!isAddingNew)}
+                className="text-[10px] font-bold text-brand-primary flex items-center gap-1 hover:underline"
+              >
+                <Plus size={12} />
+                {isAddingNew ? 'CANCELAR' : 'NUEVO MATERIAL'}
+              </button>
             </div>
+            
+            {isAddingNew ? (
+              <div className="flex items-center gap-3 border-b border-brand-accent pb-2 animate-in fade-in slide-in-from-top-1">
+                <Plus size={18} className="text-brand-accent" />
+                <input 
+                  value={newMaterialName}
+                  onChange={(e) => setNewMaterialName(e.target.value)}
+                  type="text" 
+                  placeholder="Nuevo nombre de material..." 
+                  className="flex-1 outline-none text-slate-600"
+                  autoFocus
+                />
+                <button 
+                  onClick={handleAddNew}
+                  className="bg-brand-accent text-white px-3 py-1 rounded-lg text-[10px] font-bold"
+                >
+                  AÑADIR
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 border-b border-brand-primary pb-2">
+                <Search size={18} className="text-slate-800" />
+                <select 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="flex-1 outline-none text-slate-600 bg-transparent appearance-none"
+                >
+                  <option value="">Selecciona un material...</option>
+                  {catalog.map(item => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="space-y-1">
@@ -905,14 +993,18 @@ function RequirementFormScreen({ projectName, onAdd, onBack, onList, onLogout, o
 
         <button 
           onClick={() => onAdd({ id: Math.random().toString(), name, description: desc, quantity: qty })}
-          className="w-full py-4 bg-brand-primary text-white rounded-xl font-bold text-lg shadow-lg hover:bg-brand-accent transition-colors"
+          className="w-full py-4 bg-brand-primary text-white rounded-xl font-bold text-lg shadow-lg hover:bg-brand-accent transition-colors mt-8 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!name || !qty}
         >
           Agregar al requerimiento
         </button>
       </div>
 
-      <div className="bg-topo p-6 flex justify-center curved-top">
-        <button onClick={onHome} className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center shadow-xl">
+      <div className="bg-topo p-6 flex justify-center items-center gap-6 curved-top shrink-0">
+        <button onClick={onApprovals} className="w-12 h-12 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-90">
+          <CheckCircle size={24} />
+        </button>
+        <button onClick={onHome} className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center shadow-xl transition-transform active:scale-90">
           <Home size={32} className="text-slate-800" />
         </button>
       </div>
@@ -920,10 +1012,10 @@ function RequirementFormScreen({ projectName, onAdd, onBack, onList, onLogout, o
   );
 }
 
-function RequirementListScreen({ projectName, requirements, onDelete, onBack, onNew, onLogout, onChangePassword, onHome }: { projectName: string, requirements: Requirement[], onDelete: (id: string) => void, onBack: () => void, onNew: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
+function RequirementListScreen({ projectName, requirements, onDelete, onBack, onNew, onApprovals, onLogout, onChangePassword, onHome }: { projectName: string, requirements: Requirement[], onDelete: (id: string) => void, onBack: () => void, onNew: () => void, onApprovals: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
   return (
-    <div className="flex-1 flex flex-col bg-white">
-      <div className="bg-brand-primary p-6 flex items-center justify-between text-white">
+    <div className="flex-1 flex flex-col bg-white h-full overflow-hidden">
+      <div className="bg-brand-primary p-6 flex items-center justify-between text-white shrink-0">
         <button onClick={onBack} className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
           <ArrowLeft size={20} />
         </button>
@@ -931,33 +1023,41 @@ function RequirementListScreen({ projectName, requirements, onDelete, onBack, on
         <UserDropdown onLogout={onLogout} onChangePassword={onChangePassword} />
       </div>
 
-      <div className="p-6 flex-1 flex flex-col">
-        <div className="flex gap-2 mb-8">
-          <button onClick={onNew} className="flex-1 py-3 bg-slate-200 text-slate-500 rounded-xl font-bold text-sm">Nuevo requerimiento</button>
-          <button className="flex-1 py-3 bg-brand-primary text-white rounded-xl font-bold text-sm">Lista</button>
+      <div className="p-6 flex-1 flex flex-col min-h-0">
+        <div className="flex gap-2 mb-8 shrink-0">
+          <button onClick={onNew} className="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl font-bold text-sm uppercase">Nuevo</button>
+          <button className="flex-1 py-3 bg-brand-primary text-white rounded-xl font-bold text-sm uppercase">Lista</button>
         </div>
 
-        <div className="space-y-4 flex-1 overflow-y-auto">
+        <div className="space-y-4 flex-1 overflow-y-auto min-h-0">
           {requirements.length === 0 ? (
             <div className="text-center py-20 text-slate-400 font-medium">No hay materiales en la lista</div>
           ) : (
             requirements.map(req => (
               <div key={req.id} className="bg-slate-200 rounded-xl p-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <button onClick={() => onDelete(req.id)} className="text-slate-800">
+                  <button onClick={() => onDelete(req.id)} className="text-slate-800 shrink-0">
                     <Trash2 size={24} />
                   </button>
-                  <span className="text-slate-600 font-medium">{req.name}</span>
+                  <div className="flex flex-col">
+                    <span className="text-slate-800 font-bold text-sm">{req.name}</span>
+                    {req.description && (
+                      <span className="text-slate-500 text-[10px] leading-tight mt-0.5">{req.description}</span>
+                    )}
+                  </div>
                 </div>
-                <span className="text-slate-800 font-bold">{req.quantity}</span>
+                <span className="text-slate-800 font-bold shrink-0 ml-4">{req.quantity}</span>
               </div>
             ))
           )}
         </div>
       </div>
 
-      <div className="bg-topo p-6 flex justify-center curved-top">
-        <button onClick={onHome} className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center shadow-xl">
+      <div className="bg-topo p-6 flex justify-center items-center gap-6 curved-top shrink-0">
+        <button onClick={onApprovals} className="w-12 h-12 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-90">
+          <CheckCircle size={24} />
+        </button>
+        <button onClick={onHome} className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center shadow-xl transition-transform active:scale-90">
           <Home size={32} className="text-slate-800" />
         </button>
       </div>
@@ -966,11 +1066,13 @@ function RequirementListScreen({ projectName, requirements, onDelete, onBack, on
 }
 
 function ApprovalsScreen({ approvals, filter, setFilter, onAction, onBack, onLogout, onChangePassword, onHome }: { approvals: Approval[], filter: string, setFilter: (f: any) => void, onAction: (id: string, action: any) => void, onBack: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
-  const filteredApprovals = approvals.filter(a => filter === 'all' ? true : a.status === filter);
+  const [view, setView] = useState<'list' | 'summary'>('list');
+  const pendingApprovals = approvals.filter(a => a.status === 'pending');
+  const decidedApprovals = approvals.filter(a => a.status !== 'pending');
 
   return (
-    <div className="flex-1 flex flex-col bg-brand-primary">
-      <div className="p-6 flex items-center justify-between text-white">
+    <div className="flex-1 flex flex-col bg-brand-primary h-full overflow-hidden">
+      <div className="p-6 flex items-center justify-between text-white shrink-0">
         <button onClick={onBack} className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
           <ArrowLeft size={20} />
         </button>
@@ -978,82 +1080,129 @@ function ApprovalsScreen({ approvals, filter, setFilter, onAction, onBack, onLog
         <UserDropdown onLogout={onLogout} onChangePassword={onChangePassword} />
       </div>
 
-      <div className="flex-1 bg-slate-50 rounded-t-[40px] p-6 space-y-6 overflow-y-auto pb-24">
-        {filteredApprovals.map(approval => (
-          <div key={approval.id} className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 relative">
-            <div className="absolute top-6 right-6 w-3 h-3 bg-red-500 rounded-full"></div>
-            
-            <div className="flex items-start gap-4 mb-4">
-              <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-800 border border-slate-100">
-                <Package size={24} />
-              </div>
-              <div>
-                <h4 className="text-slate-300 font-medium">{approval.material} - {approval.quantity}</h4>
-                <p className="text-xs text-slate-400">{approval.engineer}</p>
-              </div>
-            </div>
+      <div className="flex-1 bg-slate-50 rounded-t-[40px] p-6 space-y-6 overflow-y-auto pb-24 min-h-0">
+        <div className="flex bg-slate-200 p-1 rounded-2xl shrink-0">
+          <button 
+            onClick={() => setView('list')}
+            className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${view === 'list' ? 'bg-white text-brand-primary shadow-sm' : 'text-slate-500'}`}
+          >
+            PENDIENTES ({pendingApprovals.length})
+          </button>
+          <button 
+            onClick={() => setView('summary')}
+            className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${view === 'summary' ? 'bg-white text-brand-primary shadow-sm' : 'text-slate-500'}`}
+          >
+            RESUMEN ({decidedApprovals.length})
+          </button>
+        </div>
 
-            <p className="text-sm text-slate-400 mb-6 leading-relaxed">
-              {approval.description}
-            </p>
+        {view === 'list' ? (
+          <div className="space-y-6">
+            {pendingApprovals.length === 0 ? (
+              <div className="text-center py-20 text-slate-400 font-medium">No hay aprobaciones pendientes</div>
+            ) : (
+              pendingApprovals.map(approval => (
+                <div key={approval.id} className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 relative">
+                  <div className="absolute top-6 right-6 w-3 h-3 bg-brand-accent rounded-full animate-pulse"></div>
+                  
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-800 border border-slate-100">
+                      <Package size={24} />
+                    </div>
+                    <div>
+                      <h4 className="text-slate-800 font-bold">{approval.material} - {approval.quantity}</h4>
+                      <p className="text-xs text-slate-400">{approval.engineer}</p>
+                    </div>
+                  </div>
 
-            <div className="flex flex-wrap gap-3 mb-6">
-              <span className="px-4 py-1.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-700">{approval.category}</span>
-              <span className="px-4 py-1.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-700">{approval.cost}</span>
-              <span className="px-4 py-1.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-700">{approval.priority}</span>
-            </div>
+                  <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+                    {approval.description}
+                  </p>
 
-            <div className="flex items-center gap-2 text-slate-400 text-xs mb-8">
-              <Clock size={14} />
-              <span>{approval.date}</span>
-            </div>
+                  <div className="flex flex-wrap gap-3 mb-6">
+                    <span className="px-4 py-1.5 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 uppercase">{approval.category}</span>
+                    <span className="px-4 py-1.5 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 uppercase">{approval.cost}</span>
+                    <span className="px-4 py-1.5 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 uppercase">{approval.priority}</span>
+                  </div>
 
-            {approval.status === 'pending' && (
-              <div className="flex gap-4">
-                <button 
-                  onClick={() => onAction(approval.id, 'rejected')}
-                  className="flex-1 py-3 border-2 border-red-400 text-red-500 rounded-xl font-bold hover:bg-red-50 transition-colors"
-                >
-                  Rechazar
-                </button>
-                <button 
-                  onClick={() => onAction(approval.id, 'approved')}
-                  className="flex-1 py-3 border-2 border-emerald-400 text-emerald-500 rounded-xl font-bold hover:bg-emerald-50 transition-colors"
-                >
-                  Aprobar
-                </button>
-              </div>
-            )}
+                  <div className="flex items-center gap-2 text-slate-400 text-xs mb-8">
+                    <Clock size={14} />
+                    <span>{approval.date}</span>
+                  </div>
 
-            {approval.status !== 'pending' && (
-              <div className={`text-center py-3 rounded-xl font-bold ${approval.status === 'approved' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
-                {approval.status === 'approved' ? 'APROBADO' : 'RECHAZADO'}
-              </div>
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={() => onAction(approval.id, 'rejected')}
+                      className="flex-1 py-3 border-2 border-red-400 text-red-500 rounded-xl font-bold hover:bg-red-50 transition-colors text-sm"
+                    >
+                      RECHAZAR
+                    </button>
+                    <button 
+                      onClick={() => onAction(approval.id, 'approved')}
+                      className="flex-1 py-3 border-2 border-emerald-400 text-emerald-500 rounded-xl font-bold hover:bg-emerald-50 transition-colors text-sm"
+                    >
+                      APROBAR
+                    </button>
+                  </div>
+                </div>
+              ))
             )}
           </div>
-        ))}
+        ) : (
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Material</th>
+                    <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cant.</th>
+                    <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estado</th>
+                    <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Acción</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {decidedApprovals.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="p-10 text-center text-slate-400 text-sm">No hay decisiones tomadas</td>
+                    </tr>
+                  ) : (
+                    decidedApprovals.map(approval => (
+                      <tr key={approval.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="p-4">
+                          <div className="font-bold text-slate-800 text-xs">{approval.material}</div>
+                          <div className="text-[10px] text-slate-400">{approval.date}</div>
+                        </td>
+                        <td className="p-4 text-xs font-medium text-slate-600">{approval.quantity}</td>
+                        <td className="p-4">
+                          <span className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase ${
+                            approval.status === 'approved' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
+                          }`}>
+                            {approval.status === 'approved' ? 'Aprobado' : 'Rechazado'}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <button 
+                            onClick={() => onAction(approval.id, 'pending')}
+                            className="p-2 text-slate-400 hover:text-brand-primary transition-colors"
+                            title="Modificar decisión"
+                          >
+                            <Edit3 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[40px] shadow-[0_-10px_30px_rgba(0,0,0,0.05)] p-4 flex justify-around items-center">
-        <button onClick={() => setFilter('pending')} className={`flex flex-col items-center gap-1 ${filter === 'pending' ? 'text-brand-primary' : 'text-slate-400'}`}>
-          <Search size={24} />
-          <span className="text-[10px] font-bold">Pendientes</span>
-        </button>
-        <button onClick={() => setFilter('approved')} className={`flex flex-col items-center gap-1 ${filter === 'approved' ? 'text-emerald-500' : 'text-slate-400'}`}>
-          <CheckCircle size={24} />
-          <span className="text-[10px] font-bold">Aprobados</span>
-        </button>
         <button onClick={onHome} className="flex flex-col items-center gap-1 text-slate-800">
           <Home size={32} />
-          <span className="text-[10px] font-bold">Inicio</span>
-        </button>
-        <button onClick={() => setFilter('rejected')} className={`flex flex-col items-center gap-1 ${filter === 'rejected' ? 'text-red-500' : 'text-slate-400'}`}>
-          <XCircle size={24} />
-          <span className="text-[10px] font-bold">Rechazados</span>
-        </button>
-        <button onClick={() => setFilter('all')} className={`flex flex-col items-center gap-1 ${filter === 'all' ? 'text-brand-primary' : 'text-slate-400'}`}>
-          <div className="w-6 h-6 flex items-center justify-center font-bold text-xs">Todos</div>
-          <span className="text-[10px] font-bold">Todos</span>
+          <span className="text-[10px] font-bold uppercase">Inicio</span>
         </button>
       </div>
     </div>

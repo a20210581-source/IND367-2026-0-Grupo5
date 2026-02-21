@@ -28,10 +28,11 @@ import {
   FileText,
   LogOut,
   Edit3,
-  Plus
+  Plus,
+  Send,
+  ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 // --- Types ---
 
@@ -41,7 +42,6 @@ type Screen =
   | 'register' 
   | 'forgot-password'
   | 'home' 
-  | 'global-dashboard'
   | 'project-list' 
   | 'project-detail' 
   | 'inventory' 
@@ -79,27 +79,43 @@ interface Approval {
 // --- Mock Data ---
 
 const MOCK_PROJECTS = [
-  { id: '1', name: 'PROYECTO 1', status: 'En curso', client: 'Constructora Alfa', clientType: 'Corporativo', date: '2026-01-15' },
-  { id: '2', name: 'PROYECTO 2', status: 'Pendiente', client: 'Inmobiliaria Beta', clientType: 'Corporativo', date: '2026-02-01' },
-  { id: '3', name: 'PROYECTO 3', status: 'Finalizado', client: 'Gobierno Regional', clientType: 'Público', date: '2025-11-20' },
-  { id: '4', name: 'RESIDENCIAL LIMA', status: 'En curso', client: 'Privado', clientType: 'Residencial', date: '2026-02-10' },
+  { 
+    id: '1', 
+    name: 'PROYECTO 1', 
+    status: 'En curso', 
+    client: 'Constructora Alfa', 
+    clientType: 'Corporativo', 
+    date: '2026-01-15',
+    imageUrl: 'https://postgrado.ucsp.edu.pe/wp-content/uploads/2020/11/conocimientos-necesario-jefe-proyectos.jpg'
+  },
+  { 
+    id: '2', 
+    name: 'PROYECTO 2', 
+    status: 'Pendiente', 
+    client: 'Inmobiliaria Beta', 
+    clientType: 'Corporativo', 
+    date: '2026-02-01',
+    imageUrl: 'https://images.unsplash.com/photo-1517089596392-fb9a9033e05b?auto=format&fit=crop&w=400&h=200&q=80'
+  },
+  { 
+    id: '3', 
+    name: 'PROYECTO 3', 
+    status: 'Finalizado', 
+    client: 'Gobierno Regional', 
+    clientType: 'Público', 
+    date: '2025-11-20',
+    imageUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=1000&auto=format&fit=crop'
+  },
+  { 
+    id: '4', 
+    name: 'RESIDENCIAL LIMA', 
+    status: 'En curso', 
+    client: 'Privado', 
+    clientType: 'Residencial', 
+    date: '2026-02-10',
+    imageUrl: 'https://media.istockphoto.com/id/1996826487/es/foto/obra-con-gr%C3%BAas-para-edificios-residenciales.jpg?s=612x612&w=0&k=20&c=nZ4nkH6P9m_h5A0kduuObylRQBwlf2PFsT151TIpS_Q='
+  },
 ];
-
-const MOCK_STATS = {
-  projectStatus: [
-    { name: 'En curso', value: 12, color: '#100a60' },
-    { name: 'Pendientes', value: 5, color: '#3b32b3' },
-    { name: 'Finalizados', value: 28, color: '#64748b' },
-  ],
-  upcomingMilestones: [
-    { id: '1', title: 'Fundición Losa Nivel 3', date: '2026-02-25', project: 'PROYECTO 1' },
-    { id: '2', title: 'Entrega Fase 1', date: '2026-03-05', project: 'PROYECTO 2' },
-  ],
-  recentReports: [
-    { id: '1', title: 'Reporte Semanal de Avance', date: '2026-02-18', type: 'Avance' },
-    { id: '2', title: 'Auditoría de Inventario', date: '2026-02-15', type: 'Inventario' },
-  ]
-};
 
 const MOCK_INVENTORY: Record<string, Material[]> = {
   '1': [
@@ -225,11 +241,17 @@ function UserDropdown({
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [projects, setProjects] = useState(MOCK_PROJECTS);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [approvals, setApprovals] = useState<Approval[]>(MOCK_APPROVALS);
+  const [inventory, setInventory] = useState<Record<string, Material[]>>(MOCK_INVENTORY);
   const [catalog, setCatalog] = useState<string[]>(MOCK_CATALOG);
   const [approvalFilter, setApprovalFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
+
+  const handleUpdateProjectStatus = (projectId: string, newStatus: string) => {
+    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, status: newStatus } : p));
+  };
 
   const navigateTo = (screen: Screen) => setCurrentScreen(screen);
 
@@ -258,8 +280,58 @@ export default function App() {
     setRequirements(requirements.filter(r => r.id !== id));
   };
 
-  const handleApprovalAction = (id: string, action: 'approved' | 'rejected') => {
+  const handleApprovalAction = (id: string, action: 'approved' | 'rejected' | 'pending') => {
     setApprovals(approvals.map(a => a.id === id ? { ...a, status: action } : a));
+  };
+
+  const handleUpdateInventory = (projectId: string, materialId: string, newQuantity: string) => {
+    setInventory(prev => ({
+      ...prev,
+      [projectId]: prev[projectId].map(m => 
+        m.id === materialId ? { ...m, quantity: newQuantity, lastUpdate: new Date().toLocaleString() } : m
+      )
+    }));
+  };
+
+  const handleAddInventory = (projectId: string, name: string, quantity: string) => {
+    const newMaterial: Material = {
+      id: Math.random().toString(),
+      name,
+      quantity,
+      lastUpdate: new Date().toLocaleString()
+    };
+    setInventory(prev => ({
+      ...prev,
+      [projectId]: [...(prev[projectId] || []), newMaterial]
+    }));
+  };
+
+  const handleDeleteInventory = (projectId: string, materialId: string) => {
+    setInventory(prev => ({
+      ...prev,
+      [projectId]: prev[projectId].filter(m => m.id !== materialId)
+    }));
+  };
+
+  const handleSendToApprovals = () => {
+    if (requirements.length === 0) return;
+    
+    const newApprovals: Approval[] = requirements.map(req => ({
+      id: Math.random().toString(),
+      material: req.name,
+      quantity: req.quantity,
+      description: req.description || '',
+      engineer: user?.name || 'Usuario',
+      date: new Date().toLocaleDateString(),
+      status: 'pending',
+      category: 'General',
+      cost: 'N/A',
+      priority: 'Media'
+    }));
+    
+    setApprovals([...approvals, ...newApprovals]);
+    setRequirements([]);
+    navigateTo('approvals');
   };
 
   const renderScreen = () => {
@@ -268,14 +340,41 @@ export default function App() {
       case 'login': return <LoginScreen onLogin={handleLogin} onRegister={() => navigateTo('register')} onForgot={() => navigateTo('forgot-password')} onBack={() => navigateTo('welcome')} />;
       case 'register': return <RegisterScreen onBack={() => navigateTo('login')} onRegister={() => navigateTo('login')} />;
       case 'forgot-password': return <ForgotPasswordScreen onBack={() => navigateTo('login')} onUpdate={() => navigateTo('login')} />;
-      case 'home': return <HomeScreen userName={user?.name || 'Usuario'} onSelectProject={() => navigateTo('project-list')} onDashboard={() => navigateTo('global-dashboard')} onLogout={handleLogout} />;
-      case 'global-dashboard': return <GlobalDashboardScreen onBack={() => navigateTo('home')} onLogout={handleLogout} onChangePassword={() => navigateTo('forgot-password')} onHome={() => navigateTo('home')} />;
-      case 'project-list': return <ProjectListScreen onSelect={(id) => { setSelectedProject(id); navigateTo('project-detail'); }} onBack={() => navigateTo('home')} onLogout={handleLogout} onChangePassword={() => navigateTo('forgot-password')} onHome={() => navigateTo('home')} />;
-      case 'project-detail': return <ProjectDetailScreen projectName={MOCK_PROJECTS.find(p => p.id === selectedProject)?.name || ''} onBack={() => navigateTo('project-list')} onInventory={() => navigateTo('inventory')} onRequirement={() => navigateTo('requirement-form')} onApprovals={() => navigateTo('approvals')} onLogout={handleLogout} onChangePassword={() => navigateTo('forgot-password')} onHome={() => navigateTo('home')} />;
-      case 'inventory': return <InventoryScreen projectName={MOCK_PROJECTS.find(p => p.id === selectedProject)?.name || ''} materials={MOCK_INVENTORY[selectedProject || '1']} onBack={() => navigateTo('project-detail')} onLogout={handleLogout} onChangePassword={() => navigateTo('forgot-password')} onHome={() => navigateTo('home')} />;
+      case 'home': return <HomeScreen userName={user?.name || 'Usuario'} onSelectProject={() => navigateTo('project-list')} onLogout={handleLogout} />;
+      case 'project-list': return <ProjectListScreen projects={projects} onUpdateStatus={handleUpdateProjectStatus} onSelect={(id) => { setSelectedProject(id); navigateTo('project-detail'); }} onBack={() => navigateTo('home')} onLogout={handleLogout} onChangePassword={() => navigateTo('forgot-password')} onHome={() => navigateTo('home')} />;
+      case 'project-detail': {
+        const project = projects.find(p => p.id === selectedProject);
+        return (
+          <ProjectDetailScreen 
+            projectName={project?.name || ''} 
+            imageUrl={project?.imageUrl || ''}
+            onBack={() => navigateTo('project-list')} 
+            onInventory={() => navigateTo('inventory')} 
+            onRequirement={() => navigateTo('requirement-form')} 
+            onApprovals={() => navigateTo('approvals')} 
+            onLogout={handleLogout} 
+            onChangePassword={() => navigateTo('forgot-password')} 
+            onHome={() => navigateTo('home')} 
+          />
+        );
+      }
+      case 'inventory': return (
+        <InventoryScreen 
+          projectName={projects.find(p => p.id === selectedProject)?.name || ''} 
+          materials={inventory[selectedProject || '1'] || []} 
+          onUpdate={(matId, qty) => handleUpdateInventory(selectedProject || '1', matId, qty)}
+          onAdd={(name, qty) => handleAddInventory(selectedProject || '1', name, qty)}
+          onDelete={(matId) => handleDeleteInventory(selectedProject || '1', matId)}
+          onRequirement={() => navigateTo('requirement-form')}
+          onBack={() => navigateTo('project-detail')} 
+          onLogout={handleLogout} 
+          onChangePassword={() => navigateTo('forgot-password')} 
+          onHome={() => navigateTo('home')} 
+        />
+      );
       case 'requirement-form': return (
         <RequirementFormScreen 
-          projectName={MOCK_PROJECTS.find(p => p.id === selectedProject)?.name || ''} 
+          projectName={projects.find(p => p.id === selectedProject)?.name || ''} 
           catalog={catalog}
           onAdd={handleAddRequirement} 
           onAddToCatalog={handleAddToCatalog}
@@ -289,9 +388,10 @@ export default function App() {
       );
       case 'requirement-list': return (
         <RequirementListScreen 
-          projectName={MOCK_PROJECTS.find(p => p.id === selectedProject)?.name || ''} 
+          projectName={projects.find(p => p.id === selectedProject)?.name || ''} 
           requirements={requirements} 
           onDelete={handleDeleteRequirement} 
+          onSendToApprovals={handleSendToApprovals}
           onBack={() => navigateTo('requirement-form')} 
           onNew={() => navigateTo('requirement-form')} 
           onApprovals={() => navigateTo('approvals')}
@@ -536,20 +636,22 @@ function ForgotPasswordScreen({ onBack, onUpdate }: { onBack: () => void, onUpda
   );
 }
 
-function HomeScreen({ userName, onSelectProject, onDashboard, onLogout }: { userName: string, onSelectProject: () => void, onDashboard: () => void, onLogout: () => void }) {
+function HomeScreen({ userName, onSelectProject, onLogout }: { userName: string, onSelectProject: () => void, onLogout: () => void }) {
   return (
     <div className="flex-1 flex flex-col">
       <div className="p-8 flex-1 flex flex-col">
-        <div className="flex justify-between items-start mb-8">
-          <h1 className="text-5xl font-bold text-slate-800 leading-tight">¡Te damos la bienvenida, {userName}!</h1>
-          <div className="flex flex-col items-end gap-2">
-            <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center">
-              <User size={40} className="text-slate-400" />
+        <div className="flex flex-col mb-8">
+          <div className="flex justify-end mb-4">
+            <div className="flex flex-col items-end gap-2">
+              <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center">
+                <User size={40} className="text-slate-400" />
+              </div>
+              <button onClick={onLogout} className="text-red-500 font-bold text-xs flex items-center gap-1">
+                <LogOut size={14} /> Salir
+              </button>
             </div>
-            <button onClick={onLogout} className="text-red-500 font-bold text-xs flex items-center gap-1">
-              <LogOut size={14} /> Salir
-            </button>
           </div>
+          <h1 className="text-5xl font-bold text-slate-800 leading-tight">¡Te damos la bienvenida, {userName}!</h1>
         </div>
         
         <p className="text-slate-600 font-bold text-lg mb-8">
@@ -563,13 +665,6 @@ function HomeScreen({ userName, onSelectProject, onDashboard, onLogout }: { user
           >
             <Search size={24} /> SELECCIONAR PROYECTO
           </button>
-          
-          <button 
-            onClick={onDashboard}
-            className="w-full py-6 bg-white border-2 border-brand-primary text-brand-primary rounded-xl font-bold text-xl shadow-lg hover:bg-slate-50 transition-all transform active:scale-95 flex items-center justify-center gap-3"
-          >
-            <BarChart3 size={24} /> VER DASHBOARD GLOBAL
-          </button>
         </div>
       </div>
       <div className="h-1/4 bg-topo curved-top"></div>
@@ -577,108 +672,66 @@ function HomeScreen({ userName, onSelectProject, onDashboard, onLogout }: { user
   );
 }
 
-function GlobalDashboardScreen({ onBack, onLogout, onChangePassword, onHome }: { onBack: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
+function StatusDropdown({ status, onUpdate }: { status: string, onUpdate: (newStatus: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const statuses = ['En curso', 'Pendiente', 'Finalizado'];
+
+  const getStatusStyles = (s: string) => {
+    switch (s) {
+      case 'En curso': return 'bg-indigo-100 text-brand-primary';
+      case 'Finalizado': return 'bg-emerald-100 text-emerald-600';
+      default: return 'bg-slate-100 text-slate-500';
+    }
+  };
+
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 h-full overflow-hidden">
-      <div className="bg-brand-primary p-6 flex items-center justify-between text-white shrink-0">
-        <button onClick={onBack} className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-          <ArrowLeft size={20} />
-        </button>
-        <span className="text-xl font-bold">DASHBOARD GLOBAL</span>
-        <UserDropdown onLogout={onLogout} onChangePassword={onChangePassword} />
-      </div>
+    <div className="relative">
+      <button 
+        onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
+        className={`text-[10px] px-3 py-1.5 rounded-lg font-bold uppercase transition-all flex items-center gap-1.5 shadow-sm border border-white/50 ${getStatusStyles(status)}`}
+      >
+        {status}
+        <ChevronDown size={12} className={isOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
+      </button>
 
-      <div className="flex-1 p-6 space-y-6 overflow-y-auto min-h-0">
-        {/* Project Status Chart */}
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <TrendingUp size={20} className="text-brand-primary" /> Estado de Proyectos
-          </h3>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={MOCK_STATS.projectStatus}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip cursor={{fill: 'transparent'}} />
-                <Bar dataKey="value" radius={[10, 10, 0, 0]}>
-                  {MOCK_STATS.projectStatus.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Upcoming Milestones */}
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <Calendar size={20} className="text-brand-primary" /> Próximos Hitos
-          </h3>
-          <div className="space-y-4">
-            {MOCK_STATS.upcomingMilestones.map(milestone => (
-              <div key={milestone.id} className="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl">
-                <div className="w-12 h-12 bg-white rounded-xl flex flex-col items-center justify-center shadow-sm border border-slate-100">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">{milestone.date.split('-')[1]}</span>
-                  <span className="text-lg font-bold text-brand-primary">{milestone.date.split('-')[2]}</span>
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-800 text-sm">{milestone.title}</h4>
-                  <p className="text-xs text-slate-500">{milestone.project}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Reports */}
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <FileText size={20} className="text-brand-primary" /> Reportes Recientes
-          </h3>
-          <div className="space-y-4">
-            {MOCK_STATS.recentReports.map(report => (
-              <div key={report.id} className="flex items-center justify-between p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-indigo-50 text-brand-primary rounded-full flex items-center justify-center">
-                    <FileText size={18} />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-800 text-sm">{report.title}</h4>
-                    <p className="text-[10px] text-slate-400">{report.date} • {report.type}</p>
-                  </div>
-                </div>
-                <ArrowRight size={16} className="text-slate-300" />
-              </div>
-            ))}
-          </div>
-          <button className="w-full mt-6 py-3 text-brand-primary font-bold text-sm border-2 border-brand-primary rounded-xl hover:bg-brand-primary hover:text-white transition-all">
-            GENERAR NUEVO REPORTE
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-topo p-6 flex justify-center curved-top shrink-0">
-        <button onClick={onHome} className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center shadow-xl">
-          <Home size={32} className="text-slate-800" />
-        </button>
-      </div>
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}></div>
+            <motion.div 
+              initial={{ opacity: 0, y: -5, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -5, scale: 0.95 }}
+              className="absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-xl z-20 overflow-hidden border border-slate-100"
+            >
+              {statuses.map(s => (
+                <button 
+                  key={s}
+                  onClick={(e) => { e.stopPropagation(); onUpdate(s); setIsOpen(false); }}
+                  className={`w-full px-4 py-2.5 text-left text-[10px] font-bold uppercase hover:bg-slate-50 transition-colors flex items-center justify-between ${status === s ? 'text-brand-primary bg-slate-50/50' : 'text-slate-500'}`}
+                >
+                  {s}
+                  {status === s && <div className="w-1.5 h-1.5 rounded-full bg-brand-primary" />}
+                </button>
+              ))}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function ProjectListScreen({ onSelect, onBack, onLogout, onChangePassword, onHome }: { onSelect: (id: string) => void, onBack: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
+function ProjectListScreen
+({ projects, onUpdateStatus, onSelect, onBack, onLogout, onChangePassword, onHome }: { projects: any[], onUpdateStatus: (id: string, s: string) => void, onSelect: (id: string) => void, onBack: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos');
-  const [typeFilter, setTypeFilter] = useState('Todos');
 
-  const filteredProjects = MOCK_PROJECTS.filter(p => {
+  const filteredProjects = projects.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           p.client.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'Todos' || p.status === statusFilter;
-    const matchesType = typeFilter === 'Todos' || p.clientType === typeFilter;
-    return matchesSearch && matchesStatus && matchesType;
+    return matchesSearch && matchesStatus;
   });
 
   return (
@@ -721,21 +774,6 @@ function ProjectListScreen({ onSelect, onBack, onLogout, onChangePassword, onHom
               </button>
             ))}
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-            {['Todos', 'Corporativo', 'Público', 'Residencial'].map(type => (
-              <button 
-                key={type}
-                onClick={() => setTypeFilter(type)}
-                className={`px-4 py-2 rounded-full text-[10px] font-bold whitespace-nowrap transition-all ${
-                  typeFilter === type 
-                  ? 'bg-brand-accent text-white shadow-md' 
-                  : 'bg-white text-slate-500 border border-slate-200'
-                }`}
-              >
-                {type}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -744,28 +782,30 @@ function ProjectListScreen({ onSelect, onBack, onLogout, onChangePassword, onHom
           <div className="text-center py-20 text-slate-400">No se encontraron proyectos</div>
         ) : (
           filteredProjects.map(project => (
-            <button 
+            <div 
               key={project.id}
               onClick={() => onSelect(project.id)}
-              className="w-full bg-white rounded-3xl p-6 shadow-sm flex flex-col items-start gap-4 hover:shadow-md transition-all border border-slate-100 text-left group"
+              className="w-full bg-white rounded-3xl p-6 shadow-sm flex flex-col items-start gap-4 hover:shadow-md transition-all border border-slate-100 text-left group cursor-pointer"
             >
-              <div className="w-full aspect-video bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300 group-hover:bg-slate-200 transition-colors">
-                <Search size={48} />
+              <div className="w-full aspect-video bg-slate-100 rounded-2xl overflow-hidden group-hover:opacity-90 transition-opacity">
+                <img 
+                  src={project.imageUrl} 
+                  alt={project.name} 
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
               </div>
               <div className="w-full">
                 <div className="flex justify-between items-start mb-1">
                   <span className="text-xl font-bold text-slate-800">{project.name}</span>
-                  <span className={`text-[10px] px-2 py-1 rounded-md font-bold uppercase ${
-                    project.status === 'En curso' ? 'bg-indigo-100 text-brand-primary' :
-                    project.status === 'Finalizado' ? 'bg-emerald-100 text-emerald-600' :
-                    'bg-slate-100 text-slate-500'
-                  }`}>
-                    {project.status}
-                  </span>
+                  <StatusDropdown 
+                    status={project.status} 
+                    onUpdate={(newStatus) => onUpdateStatus(project.id, newStatus)} 
+                  />
                 </div>
                 <p className="text-xs text-slate-400 font-medium">{project.client} • {project.date}</p>
               </div>
-            </button>
+            </div>
           ))
         )}
       </div>
@@ -779,7 +819,7 @@ function ProjectListScreen({ onSelect, onBack, onLogout, onChangePassword, onHom
   );
 }
 
-function ProjectDetailScreen({ projectName, onBack, onInventory, onRequirement, onApprovals, onLogout, onChangePassword, onHome }: { projectName: string, onBack: () => void, onInventory: () => void, onRequirement: () => void, onApprovals: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
+function ProjectDetailScreen({ projectName, imageUrl, onBack, onInventory, onRequirement, onApprovals, onLogout, onChangePassword, onHome }: { projectName: string, imageUrl: string, onBack: () => void, onInventory: () => void, onRequirement: () => void, onApprovals: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
   return (
     <div className="flex-1 flex flex-col bg-white h-full overflow-hidden">
       <div className="bg-brand-primary p-6 flex items-center justify-between text-white shrink-0">
@@ -791,8 +831,13 @@ function ProjectDetailScreen({ projectName, onBack, onInventory, onRequirement, 
       </div>
 
       <div className="flex-1 p-6 flex flex-col gap-6 overflow-y-auto min-h-0">
-        <div className="w-full aspect-video bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300 border-b-4 border-slate-200">
-          <Search size={64} />
+        <div className="w-full aspect-video bg-slate-100 rounded-2xl overflow-hidden border-b-4 border-slate-200">
+          <img 
+            src={imageUrl} 
+            alt={projectName} 
+            className="w-full h-full object-cover"
+            referrerPolicy="no-referrer"
+          />
         </div>
 
         <div className="space-y-4 mt-4">
@@ -817,12 +862,37 @@ function ProjectDetailScreen({ projectName, onBack, onInventory, onRequirement, 
   );
 }
 
-function InventoryScreen({ projectName, materials, onBack, onLogout, onChangePassword, onHome }: { projectName: string, materials: Material[], onBack: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
+function InventoryScreen({ projectName, materials, onUpdate, onAdd, onDelete, onRequirement, onBack, onLogout, onChangePassword, onHome }: { projectName: string, materials: Material[], onUpdate: (id: string, qty: string) => void, onAdd: (name: string, qty: string) => void, onDelete: (id: string) => void, onRequirement: () => void, onBack: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [view, setView] = useState<'list' | 'summary'>('list');
+  const [isAdding, setIsAdding] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newQty, setNewQty] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
   
   const filteredMaterials = (materials || []).filter(m => 
     m.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleAdd = () => {
+    if (newName && newQty) {
+      onAdd(newName, newQty);
+      setNewName('');
+      setNewQty('');
+      setIsAdding(false);
+    }
+  };
+
+  const startEditing = (m: Material) => {
+    setEditingId(m.id);
+    setEditValue(m.quantity);
+  };
+
+  const saveEdit = (id: string) => {
+    onUpdate(id, editValue);
+    setEditingId(null);
+  };
 
   return (
     <div className="flex-1 flex flex-col bg-white h-full overflow-hidden">
@@ -834,48 +904,182 @@ function InventoryScreen({ projectName, materials, onBack, onLogout, onChangePas
         <UserDropdown onLogout={onLogout} onChangePassword={onChangePassword} />
       </div>
 
-      <div className="p-6 space-y-6 flex-1 overflow-y-auto min-h-0">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
-            <Package size={28} />
+      <div className="p-6 space-y-6 flex-1 overflow-y-auto min-h-0 pb-24">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
+              <Package size={28} />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-800">Inventario</h3>
+              <p className="text-sm text-slate-500">Materiales de Construcción</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-xl font-bold text-slate-800">Inventario</h3>
-            <p className="text-sm text-slate-500">Materiales de Construcción</p>
-          </div>
+          <button 
+            onClick={() => setView(view === 'list' ? 'summary' : 'list')}
+            className="px-4 py-2 bg-slate-100 text-brand-primary rounded-xl text-xs font-bold uppercase border border-slate-200"
+          >
+            {view === 'list' ? 'Ver Resumen' : 'Ver Lista'}
+          </button>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-          <input 
-            type="text" 
-            placeholder="Buscar materiales..." 
-            className="w-full bg-slate-100 py-3 pl-12 pr-4 rounded-xl outline-none text-slate-600"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <input 
+              type="text" 
+              placeholder="Buscar materiales..." 
+              className="w-full bg-slate-100 py-3 pl-12 pr-4 rounded-xl outline-none text-slate-600"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button 
+            onClick={() => setIsAdding(!isAdding)}
+            className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${isAdding ? 'bg-red-500 text-white' : 'bg-brand-primary text-white'}`}
+          >
+            {isAdding ? <XCircle size={24} /> : <Plus size={24} />}
+          </button>
         </div>
 
-        <div className="space-y-4">
-          {filteredMaterials.length === 0 ? (
-            <div className="text-center py-10 text-slate-400">No se encontraron materiales</div>
-          ) : (
-            filteredMaterials.map(material => (
-              <div key={material.id} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm flex justify-between items-start">
-                <div className="space-y-2">
-                  <h4 className="text-xl font-bold text-slate-800">{material.name}</h4>
-                  <p className="text-xs text-slate-400 font-medium">Última actualización: {material.lastUpdate}</p>
+        {isAdding && (
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4 animate-in fade-in slide-in-from-top-2">
+            <h4 className="text-sm font-bold text-slate-700 uppercase">Añadir Nuevo Material</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <input 
+                type="text" 
+                placeholder="Nombre" 
+                className="bg-white p-3 rounded-xl border border-slate-200 outline-none text-sm"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+              />
+              <input 
+                type="text" 
+                placeholder="Cantidad" 
+                className="bg-white p-3 rounded-xl border border-slate-200 outline-none text-sm"
+                value={newQty}
+                onChange={(e) => setNewQty(e.target.value)}
+              />
+            </div>
+            <button 
+              onClick={handleAdd}
+              className="w-full py-3 bg-brand-primary text-white rounded-xl font-bold text-sm uppercase shadow-md"
+            >
+              Guardar en Inventario
+            </button>
+          </div>
+        )}
+
+        {view === 'list' ? (
+          <div className="space-y-4">
+            {filteredMaterials.length === 0 ? (
+              <div className="text-center py-10 text-slate-400">No se encontraron materiales</div>
+            ) : (
+              filteredMaterials.map(material => (
+                <div key={material.id} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm flex justify-between items-center group">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => onDelete(material.id)}
+                      className="text-slate-300 hover:text-red-500 transition-colors"
+                      title="Eliminar material"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                    <div className="space-y-1">
+                      <h4 className="text-lg font-bold text-slate-800">{material.name}</h4>
+                      <p className="text-[10px] text-slate-400 font-medium">Actualizado: {material.lastUpdate}</p>
+                    </div>
+                  </div>
+                  
+                  {editingId === material.id ? (
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="text" 
+                        className="w-24 bg-slate-100 p-2 rounded-lg text-right font-bold text-slate-800 outline-none border border-brand-primary"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        autoFocus
+                        onBlur={() => saveEdit(material.id)}
+                        onKeyDown={(e) => e.key === 'Enter' && saveEdit(material.id)}
+                      />
+                    </div>
+                  ) : (
+                    <div 
+                      onClick={() => startEditing(material)}
+                      className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-2 rounded-xl transition-colors"
+                    >
+                      <span className="text-xl font-bold text-slate-800">{material.quantity}</span>
+                      <Edit3 size={16} className="text-slate-300 group-hover:text-brand-primary" />
+                    </div>
+                  )}
                 </div>
-                <span className="text-xl font-bold text-slate-800">{material.quantity}</span>
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Material</th>
+                    <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cantidad</th>
+                    <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Actualizado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {filteredMaterials.map(material => (
+                    <tr key={material.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <button 
+                            onClick={() => onDelete(material.id)}
+                            className="text-slate-300 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                          <div className="font-bold text-slate-800 text-xs">{material.name}</div>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        {editingId === material.id ? (
+                          <input 
+                            type="text" 
+                            className="w-20 bg-slate-100 p-1 rounded text-xs font-bold text-slate-800 outline-none border border-brand-primary"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            autoFocus
+                            onBlur={() => saveEdit(material.id)}
+                            onKeyDown={(e) => e.key === 'Enter' && saveEdit(material.id)}
+                          />
+                        ) : (
+                          <div 
+                            onClick={() => startEditing(material)}
+                            className="text-xs font-bold text-slate-800 flex items-center gap-1 cursor-pointer"
+                          >
+                            {material.quantity}
+                            <Edit3 size={12} className="text-slate-300" />
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-4 text-[10px] text-slate-400 text-right">{material.lastUpdate}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="bg-topo p-6 flex justify-center curved-top shrink-0">
-        <button onClick={onHome} className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center shadow-xl">
+      <div className="bg-topo p-6 flex justify-center items-center gap-6 curved-top shrink-0">
+        <div className="w-12 h-12" /> {/* Spacer for balance */}
+        <button onClick={onHome} className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center shadow-xl transition-transform active:scale-90">
           <Home size={32} className="text-slate-800" />
+        </button>
+        <button onClick={onRequirement} className="px-4 h-12 bg-brand-primary text-white rounded-full flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-90" title="Generar Requerimiento">
+          <Plus size={20} />
+          <span className="text-[10px] font-bold uppercase tracking-wider">REQ.</span>
         </button>
       </div>
     </div>
@@ -1012,7 +1216,7 @@ function RequirementFormScreen({ projectName, catalog, onAdd, onAddToCatalog, on
   );
 }
 
-function RequirementListScreen({ projectName, requirements, onDelete, onBack, onNew, onApprovals, onLogout, onChangePassword, onHome }: { projectName: string, requirements: Requirement[], onDelete: (id: string) => void, onBack: () => void, onNew: () => void, onApprovals: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
+function RequirementListScreen({ projectName, requirements, onDelete, onSendToApprovals, onBack, onNew, onApprovals, onLogout, onChangePassword, onHome }: { projectName: string, requirements: Requirement[], onDelete: (id: string) => void, onSendToApprovals: () => void, onBack: () => void, onNew: () => void, onApprovals: () => void, onLogout: () => void, onChangePassword: () => void, onHome: () => void }) {
   return (
     <div className="flex-1 flex flex-col bg-white h-full overflow-hidden">
       <div className="bg-brand-primary p-6 flex items-center justify-between text-white shrink-0">
@@ -1029,7 +1233,7 @@ function RequirementListScreen({ projectName, requirements, onDelete, onBack, on
           <button className="flex-1 py-3 bg-brand-primary text-white rounded-xl font-bold text-sm uppercase">Lista</button>
         </div>
 
-        <div className="space-y-4 flex-1 overflow-y-auto min-h-0">
+        <div className="space-y-4 flex-1 overflow-y-auto min-h-0 mb-6">
           {requirements.length === 0 ? (
             <div className="text-center py-20 text-slate-400 font-medium">No hay materiales en la lista</div>
           ) : (
@@ -1051,6 +1255,16 @@ function RequirementListScreen({ projectName, requirements, onDelete, onBack, on
             ))
           )}
         </div>
+
+        {requirements.length > 0 && (
+          <button 
+            onClick={onSendToApprovals}
+            className="w-full py-4 bg-emerald-500 text-white rounded-xl font-bold text-lg shadow-lg hover:bg-emerald-600 transition-colors shrink-0 mb-4 flex items-center justify-center gap-2"
+          >
+            <Send size={20} />
+            Enviar a Aprobaciones
+          </button>
+        )}
       </div>
 
       <div className="bg-topo p-6 flex justify-center items-center gap-6 curved-top shrink-0">
